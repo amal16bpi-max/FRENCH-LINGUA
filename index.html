@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>French Tour Guide AI Learning App</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root{
+  --main:#1e3c72;
+  --accent:#ffcc00;
+  --card:rgba(255,255,255,0.12);
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:Segoe UI, sans-serif;
+  background:linear-gradient(135deg,#1e3c72,#2a5298);
+  color:#fff;
+}
+
+.app{
+  display:grid;
+  grid-template-columns:260px 1fr;
+  min-height:100vh;
+}
+
+aside{
+  background:rgba(0,0,0,0.35);
+  padding:20px;
+}
+
+aside h2{
+  text-align:center;
+  margin-bottom:30px;
+}
+
+aside button{
+  width:100%;
+  margin-bottom:12px;
+  padding:12px;
+  background:var(--accent);
+  border:none;
+  border-radius:8px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+main{
+  padding:30px;
+}
+
+.section{
+  display:none;
+  animation:fade .4s;
+}
+
+.section.active{
+  display:block;
+}
+
+.card{
+  background:var(--card);
+  padding:25px;
+  border-radius:15px;
+  margin-bottom:25px;
+  box-shadow:0 15px 40px rgba(0,0,0,.3);
+}
+
+input,select,textarea{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border-radius:8px;
+  border:none;
+  font-size:15px;
+}
+
+button.action{
+  margin-top:15px;
+  background:var(--accent);
+  border:none;
+  padding:12px;
+  width:100%;
+  font-weight:bold;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.option{
+  padding:12px;
+  background:rgba(255,255,255,.2);
+  border-radius:8px;
+  margin-top:10px;
+  cursor:pointer;
+}
+
+.correct{background:#2ecc71}
+.wrong{background:#e74c3c}
+
+@keyframes fade{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1}
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside>
+<h2>🇫🇷 Tour Guide AI</h2>
+<button onclick="show('vocab')">Kosakata</button>
+<button onclick="show('pronunciation')">Pengucapan</button>
+<button onclick="show('quiz')">Quiz AI</button>
+<button onclick="show('ai')">AI Trainer</button>
+</aside>
+
+<!-- MAIN -->
+<main>
+
+<!-- KOSAKATA -->
+<div id="vocab" class="section active">
+<div class="card">
+<h2>Manajemen Kosakata</h2>
+
+<input id="fr" placeholder="Bahasa Prancis">
+<input id="id" placeholder="Arti Indonesia">
+
+<select id="cat">
+<option>Hotel</option>
+<option>Transportasi</option>
+<option>Museum</option>
+<option>Restoran</option>
+<option>Darurat</option>
+</select>
+
+<select id="level">
+<option>Mudah</option>
+<option>Menengah</option>
+<option>Sulit</option>
+</select>
+
+<button class="action" onclick="addVocab()">Simpan Kosakata</button>
+</div>
+
+<div class="card">
+<h3>Daftar Kosakata</h3>
+<ul id="list"></ul>
+</div>
+</div>
+
+<!-- PRONUNCIATION -->
+<div id="pronunciation" class="section">
+<div class="card">
+<h2>Latihan Pengucapan AI</h2>
+<p id="word">Tekan mulai</p>
+<button class="action" onclick="aiSpeak()">AI Bacakan</button>
+<button class="action" onclick="userSpeak()">Saya Ucapkan</button>
+<p id="feedback"></p>
+</div>
+</div>
+
+<!-- QUIZ -->
+<div id="quiz" class="section">
+<div class="card">
+<h2>Quiz Bahasa Prancis</h2>
+<div id="quizBox"></div>
+<button class="action" onclick="generateQuiz()">Mulai Quiz</button>
+<p id="score"></p>
+</div>
+</div>
+
+<!-- AI -->
+<div id="ai" class="section">
+<div class="card">
+<h2>AI Language Trainer</h2>
+<p id="aiText"></p>
+<button class="action" onclick="aiSentence()">Buat Kalimat Wisata</button>
+<button class="action" onclick="aiDrill()">Latihan Acak AI</button>
+</div>
+</div>
+
+</main>
+</div>
+
+<script>
+let vocab = JSON.parse(localStorage.getItem("vocab_fr")) || [];
+let current = null;
+let score = 0;
+
+// NAV
+function show(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// SIMPAN KOSAKATA
+function addVocab(){
+  vocab.push({
+    fr:fr.value,
+    id:id.value,
+    cat:cat.value,
+    level:level.value
+  });
+  localStorage.setItem("vocab_fr",JSON.stringify(vocab));
+  render();
+}
+
+// RENDER LIST
+function render(){
+  list.innerHTML="";
+  vocab.forEach(v=>{
+    let li=document.createElement("li");
+    li.textContent=`${v.fr} = ${v.id} (${v.cat})`;
+    list.appendChild(li);
+  });
+}
+render();
+
+// AI SPEAK
+function aiSpeak(){
+  if(vocab.length===0)return;
+  current=vocab[Math.floor(Math.random()*vocab.length)];
+  word.innerText=current.fr;
+  let u=new SpeechSynthesisUtterance(current.fr);
+  u.lang="fr-FR";
+  speechSynthesis.speak(u);
+}
+
+// USER SPEAK
+function userSpeak(){
+  let R=window.SpeechRecognition||webkitSpeechRecognition;
+  let rec=new R();
+  rec.lang="fr-FR";
+  rec.onresult=e=>{
+    let s=e.results[0][0].transcript;
+    feedback.innerText = s.toLowerCase()==current.fr.toLowerCase()
+      ?"✅ Pengucapan benar!"
+      :"❌ Hampir benar";
+  }
+  rec.start();
+}
+
+// QUIZ
+function generateQuiz(){
+  let q=vocab[Math.floor(Math.random()*vocab.length)];
+  current=q;
+  let opts=[q.id];
+  while(opts.length<4){
+    let r=vocab[Math.floor(Math.random()*vocab.length)].id;
+    if(!opts.includes(r))opts.push(r);
+  }
+  opts.sort(()=>Math.random()-0.5);
+  quizBox.innerHTML=`<p>Arti dari <b>${q.fr}</b>?</p>`;
+  opts.forEach(o=>{
+    let d=document.createElement("div");
+    d.className="option";
+    d.textContent=o;
+    d.onclick=()=>check(d,o);
+    quizBox.appendChild(d);
+  });
+}
+
+function check(el,a){
+  if(a==current.id){el.classList.add("correct");score++}
+  else el.classList.add("wrong");
+  score.innerText="Skor: "+score;
+}
+
+// AI KALIMAT
+function aiSentence(){
+  let v=vocab[Math.floor(Math.random()*vocab.length)];
+  aiText.innerText=`Contoh kalimat wisata:\n"${v.fr} est très important pour les touristes."`;
+}
+
+// AI DRILL
+function aiDrill(){
+  aiText.innerText="AI memilih latihan berdasarkan kesalahan Anda (simulasi).";
+}
+</script>
+
+</body>
+</html>
