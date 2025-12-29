@@ -88,6 +88,8 @@ input,select,button{
 <h3>Latihan Pengucapan</h3>
 <p id="currentWord">Klik AI</p>
 <button onclick="aiSpeak()">AI Bacakan</button>
+<button onclick="speechSynthesis.speak(new SpeechSynthesisUtterance(current.fr))">
+🔁 Ulangi
 <button onclick="userSpeak()">Saya Ucapkan</button>
 <p id="feedback"></p>
 </div>
@@ -117,6 +119,14 @@ input,select,button{
 </div>
 
 <script>
+const sentenceTemplates = [
+  "___ est très populaire auprès des touristes.",
+  "Nous visitons le ___ aujourd’hui.",
+  "Le ___ se trouve près du centre-ville.",
+  "Les touristes aiment beaucoup le ___.",
+  "Où est le ___ ?"
+];
+
 let vocab=JSON.parse(localStorage.getItem("vocab"))||[];
 let current=null,score=0;
 
@@ -158,11 +168,27 @@ function importFile(){
 
 /* SPEECH */
 function aiSpeak(){
-  current=vocab[Math.floor(Math.random()*vocab.length)];
-  currentWord.innerText=current.fr;
-  let u=new SpeechSynthesisUtterance(current.fr);
-  u.lang="fr-FR";
-  speechSynthesis.speak(u);
+  if(vocab.length === 0) {
+    alert("Kosakata masih kosong");
+    return;
+  }
+
+  // Hentikan suara sebelumnya
+  speechSynthesis.cancel();
+
+  // Ambil kosakata acak
+  current = vocab[Math.floor(Math.random() * vocab.length)];
+
+  // Tampilkan HANYA bahasa Prancis
+  currentWord.innerText = current.fr;
+
+  // Bacakan HANYA bahasa Prancis
+  const utterance = new SpeechSynthesisUtterance(current.fr);
+  utterance.lang = "fr-FR";   // 🇫🇷 WAJIB
+  utterance.rate = 0.85;      // Lebih jelas untuk belajar
+  utterance.pitch = 1;
+
+  speechSynthesis.speak(utterance);
 }
 
 function userSpeak(){
@@ -179,22 +205,55 @@ function userSpeak(){
 
 /* QUIZ */
 function generateQuiz(){
-  let q=vocab[Math.floor(Math.random()*vocab.length)];
-  current=q;
-  let opts=[q.id];
-  while(opts.length<4){
-    let r=vocab[Math.floor(Math.random()*vocab.length)].id;
-    if(!opts.includes(r))opts.push(r);
+  if(vocab.length < 3){
+    alert("Minimal 3 kosakata");
+    return;
   }
-  opts.sort(()=>Math.random()-0.5);
-  quizBox.innerHTML=`Arti dari <b>${q.fr}</b>?`;
-  opts.forEach(o=>{
-    let d=document.createElement("div");
-    d.className="option";
-    d.textContent=o;
-    d.onclick=()=>check(d,o);
-    quizBox.appendChild(d);
+
+  // pilih kosakata benar
+  const correct = vocab[Math.floor(Math.random() * vocab.length)];
+  current = correct;
+
+  // pilih template kalimat
+  const template = sentenceTemplates[
+    Math.floor(Math.random() * sentenceTemplates.length)
+  ];
+
+  // buat kalimat kosong
+  const sentence = template.replace("___", "_____");
+
+  // siapkan opsi jawaban
+  let options = [correct.fr];
+  while(options.length < 4){
+    let r = vocab[Math.floor(Math.random() * vocab.length)].fr;
+    if(!options.includes(r)) options.push(r);
+  }
+  options.sort(() => Math.random() - 0.5);
+
+  // tampilkan quiz
+  quizBox.innerHTML = `
+    // 🔊 AI membaca kalimat quiz (Bahasa Prancis saja)
+  speechSynthesis.cancel();
+
+  const spokenSentence = template.replace("___", correct.fr);
+  const utter = new SpeechSynthesisUtterance(spokenSentence);
+  utter.lang = "fr-FR";
+  utter.rate = 0.9;
+
+  speechSynthesis.speak(utter);
+
+    <p>Lengkapi kalimat berikut:</p>
+    <p><b>${sentence}</b></p>
+  `;
+
+  options.forEach(opt => {
+    let div = document.createElement("div");
+    div.className = "option";
+    div.innerText = opt;
+    div.onclick = () => checkSentence(div, opt);
+    quizBox.appendChild(div);
   });
+  
 }
 function check(el,a){
   if(a==current.id){el.classList.add("correct");score++}
@@ -218,3 +277,4 @@ async function aiQuiz(){
 </script>
 </body>
 </html>
+
