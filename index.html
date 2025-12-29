@@ -2,279 +2,236 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>French Tour Guide AI</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<title>Quiz Bahasa Prancis - Tour Guide</title>
 <style>
-body{
-  margin:0;
-  font-family:Segoe UI, sans-serif;
-  background:linear-gradient(135deg,#1e3c72,#2a5298);
-  color:white;
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(120deg,#0f2027,#203a43,#2c5364);
+  color: #fff;
+  margin: 0;
+  padding: 0;
 }
-.app{
-  display:grid;
-  grid-template-columns:260px 1fr;
-  min-height:100vh;
+.container {
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
 }
-aside{
-  background:rgba(0,0,0,.35);
-  padding:20px;
+h1, h2 {
+  text-align: center;
 }
-aside h2{text-align:center}
-aside button{
-  width:100%;padding:12px;margin-bottom:10px;
-  border:none;border-radius:8px;
-  background:#ffcc00;font-weight:bold;cursor:pointer;
+.card {
+  background: rgba(255,255,255,0.1);
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 20px;
 }
-main{padding:25px}
-.section{display:none}
-.section.active{display:block}
-.card{
-  background:rgba(255,255,255,.12);
-  padding:20px;border-radius:15px;margin-bottom:20px;
+input, button {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  margin: 5px;
 }
-input,select,button{
-  width:100%;padding:12px;margin-top:10px;
-  border-radius:8px;border:none;
+input {
+  width: 40%;
 }
-.option{
-  background:rgba(255,255,255,.2);
-  padding:10px;border-radius:8px;
-  margin-top:10px;cursor:pointer;
+button {
+  cursor: pointer;
+  background: #00c6ff;
+  color: #000;
+  font-weight: bold;
 }
-.correct{background:#2ecc71}
-.wrong{background:#e74c3c}
+button:hover {
+  background: #00ffcc;
+}
+.option {
+  background: #fff;
+  color: #000;
+  padding: 10px;
+  border-radius: 8px;
+  margin: 8px 0;
+  cursor: pointer;
+}
+.option:hover {
+  background: #00ffcc;
+}
+.correct {
+  background: #4CAF50 !important;
+  color: #fff;
+}
+.wrong {
+  background: #f44336 !important;
+  color: #fff;
+}
+.list-item {
+  display: flex;
+  justify-content: space-between;
+  background: #fff;
+  color: #000;
+  padding: 8px;
+  margin: 5px 0;
+  border-radius: 8px;
+}
+.score {
+  font-size: 18px;
+  text-align: center;
+}
 </style>
 </head>
 
 <body>
-<div class="app">
+<div class="container">
+<h1>🇫🇷 Quiz Bahasa Prancis – Tour Guide</h1>
 
-<aside>
-<h2>🇫🇷 Tour Guide AI</h2>
-<button onclick="show('vocab')">Kosakata</button>
-<button onclick="show('speak')">Pengucapan</button>
-<button onclick="show('quiz')">Quiz</button>
-<button onclick="show('ai')">AI Trainer</button>
-</aside>
-
-<main>
-
-<!-- KOSAKATA -->
-<div id="vocab" class="section active">
+<!-- TAMBAH KOSAKATA -->
 <div class="card">
-<h3>Tambah Kosakata</h3>
-<input id="fr" placeholder="Prancis">
-<input id="id" placeholder="Indonesia">
-<button onclick="addVocab()">Simpan</button>
+<h2>Tambah Kosakata</h2>
+<input id="frWord" placeholder="Bahasa Prancis">
+<input id="idWord" placeholder="Arti Indonesia">
+<button onclick="addVocab()">Tambah</button>
 </div>
 
+<!-- DAFTAR KOSAKATA -->
 <div class="card">
-<h3>Upload Dokumen (CSV / TXT)</h3>
-<input type="file" id="fileInput" accept=".csv,.txt">
-<button onclick="importFile()">Import</button>
+<h2>Daftar Kosakata</h2>
+<div id="vocabList"></div>
 </div>
 
+<!-- LATIHAN PENGUCAPAN -->
 <div class="card">
-<h3>Daftar Kosakata</h3>
-<ul id="list"></ul>
-</div>
+<h2>Latihan Pengucapan</h2>
+<button onclick="aiSpeak()">Dengarkan Kosakata</button>
+<p id="currentWord"></p>
 </div>
 
-<!-- PENGUCAPAN -->
-<div id="speak" class="section">
+<!-- QUIZ KALIMAT -->
 <div class="card">
-<h3>Latihan Pengucapan</h3>
-<p id="currentWord">Klik AI</p>
-<button onclick="aiSpeak()">AI Bacakan</button>
-<button onclick="speechSynthesis.speak(new SpeechSynthesisUtterance(current.fr))">
-🔁 Ulangi
-<button onclick="userSpeak()">Saya Ucapkan</button>
-<p id="feedback"></p>
-</div>
-</div>
-
-<!-- QUIZ -->
-<div id="quiz" class="section">
-<div class="card">
-<h3>Quiz</h3>
-<div id="quizBox"></div>
+<h2>Quiz Kalimat</h2>
 <button onclick="generateQuiz()">Mulai Quiz</button>
-<p id="scoreText"></p>
-</div>
-</div>
-
-<!-- AI -->
-<div id="ai" class="section">
-<div class="card">
-<h3>AI Trainer (Online)</h3>
-<button onclick="aiSentence()">AI Kalimat Wisata</button>
-<button onclick="aiQuiz()">AI Quiz Baru</button>
-<pre id="aiResult"></pre>
-</div>
+<div id="quizBox"></div>
+<p class="score">Skor: <span id="score">0</span></p>
 </div>
 
-</main>
 </div>
 
 <script>
+let vocab = JSON.parse(localStorage.getItem("vocabFR")) || [];
+let current = null;
+let score = 0;
+
 const sentenceTemplates = [
-  "___ est très populaire auprès des touristes.",
-  "Nous visitons le ___ aujourd’hui.",
-  "Le ___ se trouve près du centre-ville.",
-  "Les touristes aiment beaucoup le ___.",
-  "Où est le ___ ?"
+  "Où est le ___ ?",
+  "Je cherche ___",
+  "Je voudrais visiter ___",
+  "Comment aller à ___ ?",
+  "Pouvez-vous m'indiquer ___ ?"
 ];
 
-let vocab=JSON.parse(localStorage.getItem("vocab"))||[];
-let current=null,score=0;
-
-function show(id){
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+function saveData(){
+  localStorage.setItem("vocabFR", JSON.stringify(vocab));
 }
 
 function addVocab(){
-  vocab.push({fr:fr.value,id:id.value});
-  localStorage.setItem("vocab",JSON.stringify(vocab));
-  render();
+  const fr = frWord.value.trim();
+  const id = idWord.value.trim();
+  if(!fr || !id) return alert("Isi semua kolom");
+
+  vocab.push({fr, id});
+  saveData();
+  frWord.value = "";
+  idWord.value = "";
+  renderList();
 }
 
-function render(){
-  list.innerHTML="";
-  vocab.forEach(v=>{
-    let li=document.createElement("li");
-    li.textContent=`${v.fr} = ${v.id}`;
-    list.appendChild(li);
+function deleteVocab(i){
+  if(confirm("Hapus kosakata ini?")){
+    vocab.splice(i,1);
+    saveData();
+    renderList();
+  }
+}
+
+function renderList(){
+  vocabList.innerHTML = "";
+  vocab.forEach((v,i)=>{
+    vocabList.innerHTML += `
+      <div class="list-item">
+        <span>${v.fr} = ${v.id}</span>
+        <button onclick="deleteVocab(${i})">❌</button>
+      </div>
+    `;
   });
 }
-render();
 
-/* UPLOAD FILE */
-function importFile(){
-  let file=fileInput.files[0];
-  let r=new FileReader();
-  r.onload=e=>{
-    e.target.result.split("\n").forEach(l=>{
-      let p=l.split(",");
-      if(p.length>=2)vocab.push({fr:p[0],id:p[1]});
-    });
-    localStorage.setItem("vocab",JSON.stringify(vocab));
-    render();
-  };
-  r.readAsText(file);
-}
+renderList();
 
-/* SPEECH */
+/* ===== AUDIO KOSAKATA ===== */
 function aiSpeak(){
-  if(vocab.length === 0) {
-    alert("Kosakata masih kosong");
-    return;
-  }
+  if(vocab.length === 0) return alert("Kosakata kosong");
 
-  // Hentikan suara sebelumnya
   speechSynthesis.cancel();
-
-  // Ambil kosakata acak
-  current = vocab[Math.floor(Math.random() * vocab.length)];
-
-  // Tampilkan HANYA bahasa Prancis
+  current = vocab[Math.floor(Math.random()*vocab.length)];
   currentWord.innerText = current.fr;
 
-  // Bacakan HANYA bahasa Prancis
-  const utterance = new SpeechSynthesisUtterance(current.fr);
-  utterance.lang = "fr-FR";   // 🇫🇷 WAJIB
-  utterance.rate = 0.85;      // Lebih jelas untuk belajar
-  utterance.pitch = 1;
-
-  speechSynthesis.speak(utterance);
+  let u = new SpeechSynthesisUtterance(current.fr);
+  u.lang = "fr-FR";
+  u.rate = 0.85;
+  speechSynthesis.speak(u);
 }
 
-function userSpeak(){
-  let R=window.SpeechRecognition||webkitSpeechRecognition;
-  let rec=new R();
-  rec.lang="fr-FR";
-  rec.onresult=e=>{
-    let t=e.results[0][0].transcript;
-    feedback.innerText = t.toLowerCase()==current.fr.toLowerCase()
-      ?"✅ Benar":"❌ Coba lagi";
-  };
-  rec.start();
-}
-
-/* QUIZ */
+/* ===== QUIZ KALIMAT ===== */
 function generateQuiz(){
-  if(vocab.length < 3){
-    alert("Minimal 3 kosakata");
-    return;
-  }
+  if(vocab.length < 3) return alert("Minimal 3 kosakata");
 
-  // pilih kosakata benar
-  const correct = vocab[Math.floor(Math.random() * vocab.length)];
-  current = correct;
-
-  // pilih template kalimat
-  const template = sentenceTemplates[
-    Math.floor(Math.random() * sentenceTemplates.length)
-  ];
-
-  // buat kalimat kosong
-  const sentence = template.replace("___", "_____");
-
-  // siapkan opsi jawaban
-  let options = [correct.fr];
-  while(options.length < 4){
-    let r = vocab[Math.floor(Math.random() * vocab.length)].fr;
-    if(!options.includes(r)) options.push(r);
-  }
-  options.sort(() => Math.random() - 0.5);
-
-  // tampilkan quiz
-  quizBox.innerHTML = `
-    // 🔊 AI membaca kalimat quiz (Bahasa Prancis saja)
+  quizBox.innerHTML = "";
   speechSynthesis.cancel();
 
+  const correct = vocab[Math.floor(Math.random()*vocab.length)];
+  current = correct;
+
+  const template = sentenceTemplates[
+    Math.floor(Math.random()*sentenceTemplates.length)
+  ];
+
+  const displaySentence = template.replace("___","_____");
   const spokenSentence = template.replace("___", correct.fr);
-  const utter = new SpeechSynthesisUtterance(spokenSentence);
-  utter.lang = "fr-FR";
-  utter.rate = 0.9;
 
-  speechSynthesis.speak(utter);
-
-    <p>Lengkapi kalimat berikut:</p>
-    <p><b>${sentence}</b></p>
+  quizBox.innerHTML = `
+    <p><b>${displaySentence}</b></p>
   `;
 
-  options.forEach(opt => {
+  // 🔊 AI MEMBACA KALIMAT PRANCIS
+  let utter = new SpeechSynthesisUtterance(spokenSentence);
+  utter.lang = "fr-FR";
+  utter.rate = 0.9;
+  speechSynthesis.speak(utter);
+
+  let options = [correct.fr];
+  while(options.length < 4){
+    let r = vocab[Math.floor(Math.random()*vocab.length)].fr;
+    if(!options.includes(r)) options.push(r);
+  }
+  options.sort(()=>Math.random()-0.5);
+
+  options.forEach(opt=>{
     let div = document.createElement("div");
     div.className = "option";
     div.innerText = opt;
-    div.onclick = () => checkSentence(div, opt);
+    div.onclick = ()=>checkAnswer(div,opt);
     quizBox.appendChild(div);
   });
-  
-}
-function check(el,a){
-  if(a==current.id){el.classList.add("correct");score++}
-  else el.classList.add("wrong");
-  scoreText.innerText="Skor: "+score;
 }
 
-/* AI ONLINE */
-async function aiSentence(){
-  aiResult.textContent="AI berpikir...";
-  let r=await fetch("http://localhost:3000/ai/sentence",{method:"POST"});
-  let j=await r.json();
-  aiResult.textContent=j.text;
-}
-async function aiQuiz(){
-  aiResult.textContent="AI membuat quiz...";
-  let r=await fetch("http://localhost:3000/ai/quiz",{method:"POST"});
-  let j=await r.json();
-  aiResult.textContent=j.text;
+function checkAnswer(el, choice){
+  document.querySelectorAll(".option").forEach(o=>o.onclick=null);
+
+  if(choice === current.fr){
+    el.classList.add("correct");
+    score++;
+  } else {
+    el.classList.add("wrong");
+  }
+  document.getElementById("score").innerText = score;
 }
 </script>
 </body>
 </html>
-
